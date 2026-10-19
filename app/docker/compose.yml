@@ -1,0 +1,118 @@
+# LOCAL DEVELOPMENT ONLY. Not deployed to AWS.
+# On AWS: db -> RDS, certbot -> ACM, uploads -> S3, replicas -> Auto Scaling Group.
+# Layout: this file lives in app/docker/. Build context is app/ (".."), so the
+# Dockerfiles can COPY src/, public/, nginx/ etc. Env files sit next to this file:
+#   docker/.env     (app settings)   docker/.env.db   (MySQL settings)
+# Run (from app/docker):  docker compose up --build   ->  http://localhost:8080
+
+name: twitter-clone
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    env_file:
+      - .env.db
+    tmpfs:
+      - /tmp:rw,noexec,nosuid
+      - /run/mysqld:rw,noexec,nosuid
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ../schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    logging: *default-logging
+    networks:
+      - internal-net
+
+  # One service, 3 replicas. Docker DNS resolves "app" to all 3 container IPs,
+  # so nginx round-robins across them. This is deliberately a multi-instance
+  # test rig for stateless behaviour. Captcha and login are stateless; uploads are not
+  # yet (shared volume below is a stopgap until the S3 phase).
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: twitter-clone-app:local
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+      - /app/data:rw,noexec,nosuid,size=100m,uid=1000,gid=1000
+    env_file:
+      - .env
+    # LOCAL STOPGAP: one named volume shared by all replicas, so every replica sees the
+    # same files and they survive rebuilds. This only works on a single Docker host.
+    # On AWS (several instances) uploads must go to S3.
+    volumes:
+      - uploads-data:/app/uploads
+    expose:
+      - "1234"
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 384M
+    logging: *default-logging
+    networks:
+      - internal-net
+
+  nginx:
+    build:
+      context: ..
+      dockerfile: nginx/Docker/Dockerfile
+    image: twitter-clone-nginx:local
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    ports:
+      - "8080:8080"
+    depends_on:
+      app:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 128M
+    logging: *default-logging
+    networks:
+      - internal-net
+
+networks:
+  internal-net:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  uploads-data:

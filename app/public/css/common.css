@@ -1,0 +1,17 @@
+
+@media (max-width: 767.98px) {
+    body {
+        padding-bottom: 60px; 
+    }
+}
+::-webkit-scrollbar{
+    width: 10px;
+    border-radius: 20px;
+}
+
+
+::-webkit-scrollbar-track {
+    margin-top: 10px;
+    margin-bottom: 10px;
+   /* Makes the track invisible so it looks like the bar is floating */
+}

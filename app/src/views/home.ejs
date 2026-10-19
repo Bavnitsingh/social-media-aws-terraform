@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+<link rel="stylesheet" href="/css/common.css">
+</head>
+
+<body>
+
+    <div class="container-fluid bg-black min-vh-100 py-3">
+        <div class="row justify-content-center">
+
+
+            <!-- navbar -->
+        <div class="col-2 col-md-3 d-none d-md-block">
+                            <%- include('navbar.ejs') %>
+            </div>
+
+            <!-- main content  -->
+        <div class="col-12 col-sm-10 col-md-5 border-start border-end">                <!-- Sticky Header with Tabs -->
+                <div class="sticky-top bg-black bg-opacity-75 backdrop-blur border-bottom border-secondary">
+                    <div class="p-3">
+                        <h5 class="fw-bold m-0">Home</h5>
+                    </div>
+                    <div class="d-flex text-center border-bottom border-secondary">
+                        <div class="flex-grow-1 py-3 fw-bold border-bottom border-primary border-4">For you</div>
+                    </div>
+                </div>
+
+                <!-- Create Post Area -->
+                <form action="/posttweet" method="post" enctype="multipart/form-data" id="tweetForm">
+                    <div class="p-3 border-bottom border-secondary d-flex gap-3">
+                        <img src="/<%= result.profile_path %>" class="rounded-circle" style="width: 48px; height: 48px;"
+                            alt="profile">
+                        <div class="flex-grow-1">
+                            <textarea class="form-control bg-transparent text-white border-0 fs-5 p-0 shadow-none"
+                                rows="2" placeholder="What is happening?!" style="resize: none;" name="content"
+                                id="content"></textarea>
+
+                            <!-- Tool Bar -->
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="d-flex gap-3 text-primary fs-5">
+                                    <!-- The Label acts as the button for the hidden input -->
+
+
+
+                                    <!-- Button trigger modal -->
+                                    <button type="button" class="btn btn-link text-decoration-none text-primary p-0"
+                                        data-bs-toggle="modal" data-bs-target="#exampleModal">
+                                        <i class="far fa-image fs-5"></i>
+                                    </button>
+
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="exampleModal" tabindex="-1"
+                                        aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content bg-black border border-secondary">
+                                                <!-- Dark theme for modal -->
+                                                <div class="modal-header border-secondary">
+                                                    <h1 class="modal-title fs-5" id="exampleModalLabel">Select Image
+                                                    </h1>
+                                                    <button type="button" class="btn-close btn-close-white"
+                                                        data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body text-center">
+                                                    <!-- File Input -->
+                                                    <input type="file" name="media" id="image-upload" accept="image/*"
+                                                        class="form-control bg-dark text-white border-secondary mb-3">
+
+                                                    <!-- Image Preview Container -->
+                                                    <div id="preview-wrapper" class="d-none mt-3 position-relative">
+                                                        <img id="image-preview" src="#"
+                                                            class="img-fluid rounded-4 border border-secondary"
+                                                            style="max-height: 300px; width: 100%; object-fit: cover;">
+                                                        <button type="button" id="clear-image"
+                                                            class="btn btn-dark btn-sm rounded-circle position-absolute top-0 end-0 m-2 opacity-75">
+                                                            <i class="bi bi-x-lg"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer border-secondary">
+                                                    <button type="button" class="btn btn-secondary rounded-pill"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                    <!-- The 'Done' button simply closes the modal; the file stays in the input for the main form submission -->
+                                                    <button type="button" class="btn btn-primary rounded-pill px-4"
+                                                        data-bs-dismiss="modal">Done</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+
+
+                                <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4">Post</button>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+
+
+
+
+                <div class="tweets-container">
+                    <!-- Own Tweets  -->
+                    <% if(locals.owntweets && owntweets.length> 0) { %>
+                        <% for(let i=0 ; i< owntweets.length ; i++) {%>
+                            <div class="p-3 border-bottom border-secondary d-flex gap-3 hover-bg transition"
+                                id="tweet-<%= owntweets[i].tweet_id %>">
+                                <a href="/profile"><img src="/<%=owntweets[i].profile_path%>" class="rounded-circle"
+                                        style="width: 48px; height: 48px;" alt="user"></a>
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="fw-bold">
+                                                <%= owntweets[i].first_name %>
+                                                    <%= owntweets[i].last_name %>
+                                            </span>
+                                            <span class="text-secondary">@<%= owntweets[i].user_name %> · <%=
+                                                        dayjs(owntweets[i].created_at).fromNow(true) %></span>
+                                        </div>
+                                        <i class="fas fa-ellipsis-h text-secondary"></i>
+                                    </div>
+                                    <p class="mt-1 mb-2 text-break fs-6 fs-md-5">
+                                        <%= owntweets[i].content %>
+                                    </p>
+
+                                    <% if (owntweets[i].media_path) { %>
+                                        <div class="mt-2">
+                                            <img src="/<%= owntweets[i].media_path %>"
+                                                class="img-fluid rounded-4 border border-secondary w-60 h-60"
+                                                alt="Tweet Image">
+                                        </div>
+                                        <% } %>
+
+                                            <!-- Engagement Buttons -->
+                                            <div class="tweet-actions d-flex justify-content-between text-secondary mt-3 "
+                                                style="max-width: 425px;">
+                                                <!-- Reply -->
+                                                <span class="action-item reply" title="Reply">
+                                                    <i class="far fa-comment comment"
+                                                        tweet_id="<%= owntweets[i].tweet_id %>"></i>
+                                                    <%= commentcountsown[i] %>
+                                                </span>
+                                                <!-- Retweet -->
+                                                <span class="action-item " title="Retweet">
+                                                    <i class="fas fa-retweet retweet"
+                                                        tweet_id="<%= owntweets[i].tweet_id %>"></i>
+                                                    <%= rtocounts[i] %>
+                                                </span>
+                                                <!-- Like -->
+                                                <span class="action-item" title="Like">
+                                                    <i class="like <%= owntweets[i].islikedbyuser ? 'fas liked' : 'far' %> fa-heart"
+                                                        tweet_id="<%= owntweets[i].tweet_id %>"></i>
+                                                    <%= owntweets[i].likes %>
+                                                </span>
+
+                                                <!-- share  -->
+                                                <span class="action-item" title="Share">
+                                                    <i class="fab fa-twitter share-btn"
+                                                        tweet_id="<%= owntweets[i].tweet_id %>"></i>
+                                                </span>
+                                            </div>
+                                </div>
+                            </div>
+                            <%}%>
+                                <%}%>
+
+
+                                    <!-- Retweets  -->
+
+                                    <% if(locals.retweets && retweets.length> 0) { %>
+                                        <% for(let i=0 ; i< retweets.length ; i++) {%>
+                                            <div class="p-3 border-bottom border-secondary d-flex gap-3 hover-bg transition"
+                                                id="tweet-<%= retweetedTweetDetails[i].tweet_id %>">
+                                                <a href="/userprofile/<%= retweetedTweetDetails[i].user_id %>"><img
+                                                        src="/<%=retweetedTweetDetails[i].profile_path%>"
+                                                        class="rounded-circle" style="width: 48px; height: 48px;"
+                                                        alt="user"></a>
+                                                <div class="w-100">
+                                                    <div class="d-flex justify-content-between">
+                                                        <div>
+                                                            <span class="fw-bold">
+                                                                <p class="text-secondary">Retweeted by <%=
+                                                                        retweets[i].user_name %>
+                                                                </p>
+
+                                                                <%= retweetedTweetDetails[i].first_name %>
+                                                                    <%= retweetedTweetDetails[i].last_name %>
+                                                            </span>
+                                                            <span class="text-secondary">@<%=
+                                                                    retweetedTweetDetails[i].user_name %> · <%=
+                                                                        dayjs(retweetedTweetDetails[i].created_at).fromNow(true)
+                                                                        %></span>
+                                                        </div>
+                                                        <i class="fas fa-ellipsis-h text-secondary"></i>
+                                                    </div>
+                                                    <p class="mt-1 mb-2 text-break fs-6 fs-md-5">
+                                                        <%= retweetedTweetDetails[i].content %>
+                                                    </p>
+
+                                                    <% if (retweetedTweetDetails[i].media_path) { %>
+                                                        <div class="mt-2">
+                                                            <img src="/<%= retweetedTweetDetails[i].media_path %>"
+                                                                class="img-fluid rounded-4 border border-secondary w-60 h-60"
+                                                                alt="Tweet Image">
+                                                        </div>
+                                                        <% } %>
+
+                                                            <!-- Engagement Buttons -->
+                                                            <div class="tweet-actions d-flex justify-content-between text-secondary mt-3 "
+                                                                style="max-width: 425px;">
+                                                                <!-- Reply -->
+                                                                <span class="action-item reply" title="Reply">
+                                                                    <i class="far fa-comment comment"
+                                                                        tweet_id="<%= retweetedTweetDetails[i].tweet_id %>"></i>
+                                                                    <%=retweets[i].commentscount %>
+                                                                </span>
+                                                                <!-- Retweet -->
+                                                                <span class="action-item " title="Retweet">
+                                                                    <i class="fas fa-retweet retweet"
+                                                                        tweet_id="<%= retweetedTweetDetails[i].tweet_id %>"></i>
+                                                                        <%= retweetcounts[i]%>
+                                                                </span>
+                                                                <!-- Like -->
+                                                                <span class="action-item" title="Like">
+                                                                    <i class="like <%= retweetedTweetDetails[i].islikedbyuser ? 'fas liked' : 'far' %> fa-heart"
+                                                                        tweet_id="<%= retweetedTweetDetails[i].tweet_id %>"></i>
+                                                                    <%= retweetedTweetDetails[i].likes %>
+                                                                </span>
+
+                                                                <!-- share  -->
+                                                                <span class="action-item" title="Share">
+                                                                    <i class="fab fa-twitter share-btn"
+                                                                        tweet_id="<%= retweetedTweetDetails[i].tweet_id %>"></i>
+                                                                </span>
+                                                            </div>
+                                                </div>
+                                            </div>
+                                            <%}%>
+                                                <%}%>
+
+                                                    <!-- Following Tweets -->
+                                                    <% if(locals.followingtweets){ %>
+
+                                                        <% for(let i=0 ; i< followingtweets.length ; i++) {%>
+                                                            <div class="p-3 border-bottom border-secondary d-flex gap-3 hover-bg transition"
+                                                                id="tweet-<%= followingtweets[i].tweet_id %>">
+                                                                <a
+                                                                    href="/userprofile/<%= followingtweets[i].followee_id %>">
+                                                                    <img src="/<%= followingtweets[i].profile_path %>"
+                                                                        class="rounded-circle"
+                                                                        style="width: 48px; height: 48px;" alt="user">
+                                                                </a>
+                                                                <div class="w-100">
+                                                                    <div class="d-flex justify-content-between">
+                                                                        <div>
+                                                                            <span class="fw-bold">
+                                                                                <%= followingtweets[i].first_name %>
+                                                                                    <%= followingtweets[i].last_name %>
+                                                                            </span>
+                                                                            <span class="text-secondary">@<%=
+                                                                                    followingtweets[i].user_name %> ·
+                                                                                    <%= dayjs(followingtweets[i].created_at).fromNow(true)
+                                                                                        %></span>
+                                                                        </div>
+                                                                        <i class="fas fa-ellipsis-h text-secondary"></i>
+                                                                    </div>
+                                                                    <p class="mt-1 mb-2 text-break fs-6 fs-md-5">
+                                                                        <%= followingtweets[i].content %>
+                                                                    </p>
+
+                                                                    <% if (followingtweets[i].media_path) { %>
+                                                                        <div class="mt-2">
+
+                                                                            <img src="/<%= followingtweets[i].media_path %>"
+                                                                                class="img-fluid rounded-4 border border-secondary w-60 h-60"
+                                                                                alt="Tweet Image">
+
+                                                                        </div>
+                                                                        <% } %>
+
+                                                                            <!-- Engagement Buttons -->
+                                                                            <div class="tweet-actions d-flex justify-content-between text-secondary mt-3"
+                                                                                style="max-width: 425px;">
+                                                                                <!-- Reply -->
+                                                                                <span class="action-item reply"
+                                                                                    title="Reply">
+                                                                                    <i class="far fa-comment comment"
+                                                                                        tweet_id="<%= followingtweets[i].tweet_id %>"></i>
+                                                                                    <%= commentcountsfollowing[i] %>
+                                                                                </span>
+                                                                                <!-- Retweet -->
+                                                                                <span class="action-item"
+                                                                                    title="Retweet">
+                                                                                    <i class="fas fa-retweet retweet"
+                                                                                        tweet_id="<%= followingtweets[i].tweet_id %>"></i>
+                                                                                    <%= rtcounts[i] %>
+                                                                                </span>
+                                                                                <!-- Like -->
+                                                                                <span class="action-item" title="Like">
+                                                                                    <i class="like <%= followingtweets[i].islikedbyuser ? 'fas liked' : 'far' %> fa-heart"
+                                                                                        tweet_id="<%= followingtweets[i].tweet_id %>"></i>
+                                                                                    <%= followingtweets[i].likes %>
+                                                                                </span>
+
+                                                                                <!-- Share  -->
+
+                                                                                <span class="action-item" title="Share">
+                                                                                    <i class="fab fa-twitter share-btn"
+                                                                                        tweet_id="<%= followingtweets[i].tweet_id %>"></i>
+                                                                                </span>
+                                                                            </div>
+                                                                </div>
+                                                            </div>
+                                                            <%}%>
+                </div>
+                <%}%>
+            </div>
+
+            <!-- search bar  -->
+        <div class="   col-md-3 d-none d-md-block">                <%- include('searchbar.ejs',{people:people}) %>
+
+            </div>
+
+
+        </div>
+    </div>
+
+    <div class="mobileview">
+        <%- include('mobile.ejs') %>
+    </div>
+  
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const imageUpload = document.getElementById('image-upload');
+        const previewWrapper = document.getElementById('preview-wrapper');
+        const imagePreview = document.getElementById('image-preview');
+        const clearBtn = document.getElementById('clear-image');
+
+        imageUpload.addEventListener('change', function () {
+            const file = this.files[0];
+            if (file) {
+                // Create a temporary local URL for the preview
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    imagePreview.src = e.target.result;
+                    previewWrapper.classList.remove('d-none');
+                }
+
+                reader.readAsDataURL(file);
+            }
+        });
+
+
+    </script>
+
+
+    <script src="/js/posttweet.js"></script>
+    <script src="/js/likes.js"></script>
+    <script src="/js/retweet.js"></script>
+    <script src="/js/comments.js"></script>
+    <script src="/js/share.js"></script>
+    <script src="/js/follow.js"></script>
+</body>
+
+</html>

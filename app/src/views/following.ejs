@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Following</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+</head>
+
+<body>
+
+ <div class="container-fluid bg-black min-vh-100 py-3">
+    <div class="row justify-content-center">
+
+
+        <div class="col-2 col-md-3 d-none d-sm-block">
+            <%- include('navbar.ejs') %>
+        </div>
+ <div class="col-12 col-sm-10 col-md-5 border-start border-end">  
+    <!-- Sticky Header -->
+    <div class="sticky-top bg-black bg-opacity-75 border-bottom border-secondary p-3">
+        <div class="d-flex align-items-center gap-4">
+            <a href="/home" class="text-white text-decoration-none">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h5 class="fw-bold m-0">Following</h5>
+                <p class="text-secondary small m-0"><%= followings.length %> Following</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Following List -->
+    <div class="following-list">
+        <% if (locals.followings && followings.length > 0) { %>
+            <% followings.forEach(person => { %>
+                <div class="p-3 border-bottom border-secondary d-flex justify-content-between align-items-start shadow-none">
+                    <div class="d-flex gap-3">
+                        <!-- Profile Image -->
+                        <div class="rounded-circle overflow-hidden bg-secondary flex-shrink-0" style="width: 48px; height: 48px;">
+                            <img src="/<%= person.profile_path %>" class="w-100 h-100 object-fit-cover" alt="">
+                        </div>
+                        <!-- User Info -->
+                        <div class="overflow-hidden">
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold text-truncate"><%= person.first_name %> <%= person.last_name %></span>
+                                <span class="text-secondary small">@<%= person.user_name %></span>
+                            </div>
+                            <p class="mt-2 mb-0 small text-white-50"><%= person.bio %></p>
+                        </div>
+                    </div>
+                    <!-- Action Button -->
+                    <button class="unfollowbtn btn btn-outline-light rounded-pill fw-bold btn-sm px-3 mt-1" 
+                            data-userid="<%= person.user_id %>">
+                        Unfollow
+                    </button>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="p-5 text-center">
+                <h4 class="fw-bold">You aren't followings anyone yet</h4>
+                <p class="text-secondary">When you do, they’ll be listed here.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+            
+
+
+  <div class="   col-md-3 d-none d-md-block">  <%- include('searchbar.ejs',{people:people}) %>
+
+        </div>
+    </div>
+</div>
+
+    <div class="mobileview">
+        <%- include('mobile.ejs') %>
+    </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+    <script src="/js/unfollow.js">
+    
+
+    </script>
+    <script src="/js/follow.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+    <div class="sticky-top" style="top: 20px; z-index: 1020;">    <!-- Search Bar -->
+    <div class="input-group mb-4 position-relative">
+        <span class="input-group-text bg-dark border-0 rounded-start-pill text-secondary ps-3" style="background-color: #202327 !important;">
+            <i class="fas fa-search"></i>
+        </span>
+        <input type="search" class="form-control bg-dark border-0 rounded-end-pill text-white shadow-none py-2" id="search-bar"
+            placeholder="Search" style="background-color: #202327 !important;">
+    </div>
+
+    <!-- Who to follow card -->
+    <div class="bg-dark rounded-4 p-3 border border-secondary bg-opacity-25" style="background-color: #16181c !important;">
+        <h5 class="fw-bold mb-3 px-1">Who to follow</h5>
+
+        <div id="people" class="d-flex flex-column gap-3">
+            <% if(people && people.length > 0 ){ %>
+                <% for (let i=0; i < people.length; i++) { %>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center text-dark"
+                                 style="width: 40px; height: 40px; overflow: hidden;"> 
+                                <a href="/userprofile/<%= people[i].user_id %>">
+                                    <img src="/<%= people[i].profile_path %>" alt="profile" class="w-100 h-100 object-fit-cover rounded-circle">
+                                </a>
+                            </div>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold lh-1 text-truncate" style="max-width: 110px;">
+                                    <%= people[i].first_name %> <%= people[i].last_name %>
+                                </span>
+                                <span class="text-secondary small text-truncate" style="max-width: 110px;">@<%= people[i].user_name %></span>
+                            </div>
+                        </div>
+                        <input type="hidden" name="id" class="user_id" value="<%= people[i].user_id %>">
+                        <button class="btn btn-light rounded-pill fw-bold btn-sm px-3 py-1 followbtn">Follow</button>
+                    </div>
+                <% } %>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<script src="/js/search.js"></script>

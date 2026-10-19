@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Simulation - Reset Password</title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+</head>
+<body class="bg-dark text-white py-5">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            
+            <!-- Email Browser Window -->
+            <div class="card shadow-lg border border-secondary bg-dark text-white">
+                <!-- Inbox Header -->
+                <div class="card-header bg-dark py-3 border-bottom border-secondary d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary rounded-pill">Inbox</span>
+                    <h6 class="mb-0 fw-bold">Password Reset Link</h6>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Sender Info -->
+                    <div class="d-flex justify-content-between mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 40px; height: 40px;">X</div>
+                            <div>
+                                <p class="mb-0 fw-bold text-white">X Support <span class="text-secondary fw-normal small">&lt;verify@x.com&gt;</span></p>
+                                <p class="mb-0 text-secondary small">to me</p>
+                            </div>
+                        </div>
+                        <span class="text-secondary small">Just now</span>
+                    </div>
+
+                    <!-- Email Content -->
+                    <div class="border-top border-secondary pt-4">
+                        <p class="fs-5">Hello,</p>
+                        <p class="text-light opacity-75">We received a request to reset your password. Use the information below to complete the process. This code will expire soon.</p>
+                        
+                        <!-- Main Action Area -->
+                        <div class="bg-black rounded-3 p-4 my-4 border border-secondary text-center">
+                            <h2 class="fw-bold text-primary mb-3" id="showOtp" style="letter-spacing: 5px;">----</h2>
+                            <p class="text-secondary small">Your One-Time Password (OTP)</p>
+                            
+                            <div id="resetlink" style="display: none;"  class="mt-3">
+                                <a href="<%= resetUrl %>" class="btn btn-primary rounded-pill px-4 fw-bold">Click here to reset</a>
+                            </div>
+                        </div>
+
+                        <!-- Timer & Input -->
+                        <div class="row g-3 align-items-center">
+                            <div class="col-sm-6">
+                                <div class="p-2 border border-secondary rounded bg-black text-center">
+                                    <span class="text-secondary small d-block">Time Remaining</span>
+                                    <span id="timer" class="fw-bold text-danger fs-5">--:--</span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-floating">
+                                    <input type="text" name="inputedotp" id="otp" class="form-control bg-black text-white border-secondary shadow-none" placeholder="Enter OTP">
+                                    <label for="otp" class="text-secondary">Enter 6-digit OTP</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2 mt-4">
+                            <button id="verifyBtn" class="btn btn-light flex-grow-1 py-2 fw-bold">Verify OTP</button>
+                            <button id="resendBtn" class="btn btn-outline-secondary px-4">Resend</button>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- Footer -->
+                <div class="card-footer bg-dark text-center py-3 border-top border-secondary">
+                    <p class="text-secondary small mb-0">If you didn't request this, you can safely ignore this email.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+<script src="js/otpverify.js"></script>
+</body>
+</html>

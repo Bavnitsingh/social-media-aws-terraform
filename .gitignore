@@ -1,0 +1,40 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+
+# Secrets and environment files (commit only the .example files)
+.env
+.env.*
+!.env.example
+!.env.db.example
+secrets/
+*.pem
+*.key
+*.ppk
+
+# User uploads (live in a Docker volume, never in Git)
+app/uploads/
+
+# Terraform: state, plans, local variable files, provider cache
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+tfplan
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# .terraform.lock.hcl is NOT ignored on purpose: commit it.
+
+# Logs
+*.log
+npm-debug.log*
+

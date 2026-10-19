@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comments</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+</head>
+<body>
+    
+ <div class="container-fluid p-3">
+        <div class="row justify-content-center align-items-start">
+            
+            <div class="col-2 border-end border-secondary p-0 sticky-top vh-100 d-none d-md-block">
+                <%- include('navbar.ejs') %>
+            </div>
+
+            <div class="col-5 col-md-5 border-end border-secondary p-0 min-vh-100">
+               
+                <div class="sticky-top bg-black bg-opacity-75 backdrop-blur border-bottom border-secondary d-flex align-items-center p-3">
+                    <a href="/home" class="text-white me-4 text-decoration-none">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h5 class="fw-bold m-0">Post</h5>
+                </div>
+
+                <div class="p-3 border-bottom border-secondary">
+                    <div class="d-flex align-items-center mb-3">
+                        <img src="/<%= tweet.profile_path %>" class="rounded-circle me-3" style="width: 48px; height: 48px;" alt="user">
+                        <div>
+                            <div class="fw-bold"><%= tweet.first_name %> <%= tweet.last_name %></div>
+                            <div class="text-secondary small">@<%= tweet.user_name %></div>
+                        </div>
+                    </div>
+                    <p class="fs-4 mb-3"><%= tweet.content %></p>
+                    <% if (tweet.media_path) { %>
+                        <img src="/<%= tweet.media_path %>" class="img-fluid rounded-4 border border-secondary mb-3 w-60 h-60" alt="content">
+                    <% } %>
+                    <div class="text-secondary small pb-3 border-bottom border-secondary">
+                        <%= new Date(tweet.created_at).toLocaleTimeString() %> · <%= new Date(tweet.created_at).toLocaleDateString() %>
+                    </div>
+               
+                </div>
+
+                <form action="/comments/<%= tweet.tweet_id %>" method="POST" class="p-3 border-bottom border-secondary d-flex gap-3" id="commentForm">
+                    <img src="/<%= currentUser.profile_path %>" class="rounded-circle" style="width: 40px; height: 40px;" alt="user">
+                    <div class="w-100">
+                        <textarea name="comment" id="comment" class="form-control bg-transparent text-white border-0 fs-5 p-0 shadow-none" placeholder="Post your reply" rows="1" style="resize: none;"></textarea>
+                        <div class="d-flex justify-content-end mt-2">
+                            <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4 btn-sm">Reply</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div class="comments-container">
+                    <% if(locals.comments && comments.length > 0) { %>
+                        <% for(let i=0;i< comments.length;i++) { %>
+                            <div class="p-3 border-bottom border-secondary d-flex gap-3 hover-bg">
+                                <img src="/<%= comments[i].profile_path %>" class="rounded-circle" style="width: 40px; height: 40px;" alt="user">
+                                <div class="w-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div>
+                                            <span class="fw-bold"><%= comments[i].first_name %></span>
+                                            <span class="text-secondary small">@<%= comments[i].user_name %> · <%= comments[i].timeAgo %></span>
+                                        </div>
+                                        <i class="fas fa-ellipsis-h text-secondary"></i>
+                                    </div>
+                                    <div class="mt-1"><%= comments[i].content %></div>
+                                    <div class="d-flex justify-content-between text-secondary mt-2 pe-5 w-75">
+                                       <span> <i class="far fa-comment comment" tweet_id = "<%= comments[i].tweet_id %>"></i><%= commentcounts[i] %></span>
+                                        
+                                        <i class="fas fa-retweet"></i>
+                                        <span>
+                                        <i class="far fa-heart like" tweet_id = "<%= comments[i].tweet_id %>"></i><%= comments[i].likes %>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        <% } %>
+                    <% } else { %>
+                        <div class="p-5 text-center text-secondary">No comments yet.</div>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="col-3 border-start border-secondary sticky-top vh-100">
+                <%- include('searchbar.ejs',{people:people}) %>
+
+            </div>
+
+        </div>
+    </div>
+          <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+            integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+            crossorigin="anonymous"></script>
+
+            <script src="/js/comments.js"></script>
+            <script src="/js/likes.js"></script>
+</body>
+</html>
