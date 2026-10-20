@@ -1,0 +1,4 @@
+# Copy to backend.hcl (git-ignored) and fill in from the bootstrap outputs.
+# Use with:  terraform init -backend-config=backend.hcl
+bucket = "your bucket name"
+region = "your region"
