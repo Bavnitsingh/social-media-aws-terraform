@@ -15,3 +15,14 @@ variable "environment" {
   type        = string
   default     = "dev"
 }
+variable "vpc_cidr" {
+  description = "CIDR block for the dev VPC."
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "name" {
+  description = "Name prefix for every resource."
+  type        = string
+  default     = "twitter-bsc"
+}
