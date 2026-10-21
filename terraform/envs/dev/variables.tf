@@ -26,3 +26,15 @@ variable "name" {
   type        = string
   default     = "twitter-bsc"
 }
+
+variable "app_port" {
+  description = "Port the app listens on inside the instance. Check EXPOSE / listen port in your Dockerfile."
+  type        = number
+  default     = 1234
+}
+
+variable "db_port" {
+  description = "MySQL port."
+  type        = number
+  default     = 3306
+}
