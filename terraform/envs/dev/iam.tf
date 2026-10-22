@@ -30,5 +30,22 @@ resource "aws_iam_instance_profile" "app" {
 
 # Later phases add policies here, each scoped to ONE resource:
 #   Phase 4: secretsmanager:GetSecretValue on the DB secret ARN
+
+data "aws_iam_policy_document" "app_secrets" {
+  statement {
+    sid     = "ReadOwnSecrets"
+    actions = ["secretsmanager:GetSecretValue"]
+    resources = [
+      aws_db_instance.this.master_user_secret[0].secret_arn,
+      aws_secretsmanager_secret.app.arn,
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "app_secrets" {
+  name   = "read-own-secrets"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_secrets.json
+}
 #   Phase 5: ecr:GetAuthorizationToken + pull actions on the one repository
 #   Phase 8: CloudWatch Logs write

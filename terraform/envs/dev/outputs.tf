@@ -32,3 +32,25 @@ output "db_sg_id" {
 output "app_instance_profile_name" {
   value = aws_iam_instance_profile.app.name
 }
+
+output "db_endpoint" {
+  description = "DB_HOST for the app."
+  value       = aws_db_instance.this.address
+}
+
+output "db_port" {
+  value = aws_db_instance.this.port
+}
+
+output "db_name" {
+  value = aws_db_instance.this.db_name
+}
+
+output "db_master_secret_arn" {
+  description = "Secret that holds the DB username and password (managed by RDS)."
+  value       = aws_db_instance.this.master_user_secret[0].secret_arn
+}
+
+output "app_secret_arn" {
+  value = aws_secretsmanager_secret.app.arn
+}

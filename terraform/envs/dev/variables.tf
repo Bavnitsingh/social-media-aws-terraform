@@ -38,3 +38,21 @@ variable "db_port" {
   type        = number
   default     = 3306
 }
+
+variable "db_name" {
+  description = "Initial database name. Must match DB_NAME your app expects."
+  type        = string
+  default     = "twitter_clone"
+}
+
+variable "db_username" {
+  description = "RDS master username."
+  type        = string
+  default     = "dbadmin"
+}
+
+variable "db_instance_class" {
+  description = "RDS instance size."
+  type        = string
+  default     = "db.t4g.micro"
+}
