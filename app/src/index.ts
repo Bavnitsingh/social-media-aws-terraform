@@ -1,4 +1,5 @@
-import express, { Request, Response } from "express";
+import express, { NextFunction, Request, Response } from "express";
+import { serveUploads, UploadError } from "./utils/uploads.js";
 import path from "node:path";
 import os from "node:os";
 import mainroute from "./routes/main.route.js";
@@ -26,7 +27,8 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 app.use(express.static("public"));
-app.use("/uploads", express.static(path.join("uploads"))); // goes away when uploads move to S3
+app.use("/uploads", serveUploads);              // S3 mode: streams from the private bucket
+app.use("/uploads", express.static("uploads")); // local mode: serves the disk folder
 
 if (SHOW_SERVED_BY) {
   app.use((req: Request, res: Response, next) => {
@@ -55,6 +57,16 @@ app.set("views", path.join(import.meta.dirname, "views"));
 app.use(passport.initialize());
 configurePassport(passport);
 app.use("/", mainroute);
+
+// Friendly errors for bad uploads (wrong type, file too large); everything else is a 500.
+app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  if (err instanceof UploadError || err?.name === "MulterError") {
+    res.status(400).send(err.message);
+    return;
+  }
+  console.error(err);
+  res.status(500).send("Something went wrong");
+});
 
 const server = app.listen(port, () => {
   console.log(`App is listening on port ${port}`);

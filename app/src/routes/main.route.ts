@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { showSignUpPage, signupUser, showLoginPage, loginUser, logoutUser } from "../controllers/auth.controller.js";
 import { getCaptcha } from "../controllers/captcha.controller.js";
+import { storeUploads } from "../utils/uploads.js";
 import passport from "passport";
 import { handleForgot, handleReset, showForgotForm, showResetForm } from "../controllers/forgotPassword.controller.js";
 import { generateOtp, resendOtp, verifyOtp } from "../utils/otp.utils.js";
@@ -39,7 +40,9 @@ router.route('/userprofile/:id').get(showUserProfilePage);
 router.route('/tweet').get(showUserTweet)
 router.route('/tweet/:tweet_id').get(deleteTweet);
 router.route('/like/:tweet_id').post(postLikes)
-router.route('/posttweet').post(upload.single('media'), handleTweetPost);
+router
+  .route("/posttweet")
+  .post(upload.single("media"), storeUploads, handleTweetPost);
 router.route('/tweet').post(postRetweet);
 router.route('/follow/:id').post(handleFollowing);
 router.route('/recommend').get(recommendationPeople);

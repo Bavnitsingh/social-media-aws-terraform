@@ -1,19 +1,14 @@
-import multer, { FileFilterCallback } from 'multer';
-import path from 'path';
-import File  from 'multer';
+import multer from "multer";
+import { ALLOWED_MIME, UploadError } from "../utils/uploads.js";
 
-
-
-
-
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/')
+// Files are held in memory (max 5 MB each) and then saved by storeUploads.
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 2 },
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIME.includes(file.mimetype)) cb(null, true);
+    else cb(new UploadError("Only JPEG, PNG, GIF or WebP images are allowed"));
   },
-  filename: function (req, file, cb) {
-    cb(null, file.originalname)
-  }
-})
-const upload = multer({ storage })
+});
+
 export default upload;

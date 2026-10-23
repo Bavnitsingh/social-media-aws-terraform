@@ -30,7 +30,7 @@ variable "name" {
 variable "app_port" {
   description = "Port the app listens on inside the instance. Check EXPOSE / listen port in your Dockerfile."
   type        = number
-  default     = 1234
+  default     = 8080
 }
 
 variable "db_port" {
@@ -42,7 +42,7 @@ variable "db_port" {
 variable "db_name" {
   description = "Initial database name. Must match DB_NAME your app expects."
   type        = string
-  default     = "twitter_clone"
+  default     = "twitterClone"
 }
 
 variable "db_username" {

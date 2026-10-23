@@ -31,7 +31,8 @@ COPY package.json ./
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src/views ./dist/views
 COPY public ./public
-
+COPY schema.sql ./dist/schema.sql
+COPY certs ./certs
 # Only these two paths are writable by the app user.
 RUN mkdir -p /app/uploads /app/data && chown node:node /app/uploads /app/data
 

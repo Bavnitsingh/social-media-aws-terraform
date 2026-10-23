@@ -47,5 +47,56 @@ resource "aws_iam_role_policy" "app_secrets" {
   role   = aws_iam_role.app.id
   policy = data.aws_iam_policy_document.app_secrets.json
 }
-#   Phase 5: ecr:GetAuthorizationToken + pull actions on the one repository
+#   Phase 5: ecr:GetAuthorizationToken + pull actions on the 2 repository and s3 bucket for uploads
+
+data "aws_ecr_repository" "this" {
+  for_each = toset(["app", "nginx"])
+  name     = "${var.project}/${each.key}" # created in envs/shared: apply that first
+}
+
+data "aws_iam_policy_document" "app_ecr_pull" {
+  statement {
+    sid       = "EcrLogin"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"] # this action cannot be scoped to a repository
+  }
+
+  statement {
+    sid = "PullFromOurRepositories"
+    actions = [
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:BatchCheckLayerAvailability",
+    ]
+    resources = [for r in data.aws_ecr_repository.this : r.arn]
+  }
+}
+
+resource "aws_iam_role_policy" "app_ecr_pull" {
+  name   = "pull-app-images"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_ecr_pull.json
+}
+
+data "aws_iam_policy_document" "app_uploads" {
+  statement {
+    sid       = "ListUploadsBucket"
+    actions   = ["s3:ListBucket"] # without it, a missing key returns 403 instead of 404
+    resources = [aws_s3_bucket.uploads.arn]
+  }
+
+  statement {
+    sid       = "ReadWriteUploadObjects"
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = ["${aws_s3_bucket.uploads.arn}/*"]
+  }
+}
+
+resource "aws_iam_role_policy" "app_uploads" {
+  name   = "uploads-bucket-access"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_uploads.json
+}
+
+
 #   Phase 8: CloudWatch Logs write

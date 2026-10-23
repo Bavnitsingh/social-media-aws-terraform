@@ -7,13 +7,15 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "tsx --watch src/index.ts",
     "start": "node dist/index.js",
-    "build": "tsc"
+    "build": "tsc",
+    "migrate": "node dist/migrate.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1156.0",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "bcrypt": "^6.0.0",
@@ -30,7 +32,6 @@
     "luxon": "^3.7.2",
     "multer": "^2.1.1",
     "mysql2": "^3.22.0",
-    "nodemon": "^3.1.14",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "speakeasy": "^2.0.0",
@@ -50,6 +51,7 @@
     "@types/speakeasy": "^2.0.10",
     "@types/uuid": "^10.0.0",
     "@types/validator": "^13.15.10",
+    "nodemon": "^3.1.14",
     "typescript": "^7.0.2"
   }
 }

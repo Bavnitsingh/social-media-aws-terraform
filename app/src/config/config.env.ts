@@ -41,6 +41,15 @@ export const DB_PORT: number = parseInt(optional("DB_PORT", "3306"), 10);
 // Public URL of the site (used to build links such as password reset)
 export const SITE_URL: string = required("SITE_URL", "http://localhost:1234");
 
+// Uploads: S3 bucket on AWS. If unset, files go to the local disk (local development only).
+export const UPLOADS_BUCKET: string = optional("UPLOADS_BUCKET", "");
+export const AWS_REGION: string = optional("AWS_REGION", "ap-south-1");
+
+// Database TLS (path to the RDS CA bundle) and per-instance connection pool size
+export const DB_SSL_CA: string = optional("DB_SSL_CA", "");
+export const DB_POOL_SIZE: number =
+  parseInt(optional("DB_POOL_SIZE", "10"), 10) || 10;
+
 if (missing.length > 0) {
   throw new Error(
     `Missing required environment variables in production: ${missing.join(", ")}`,

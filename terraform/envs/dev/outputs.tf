@@ -54,3 +54,11 @@ output "db_master_secret_arn" {
 output "app_secret_arn" {
   value = aws_secretsmanager_secret.app.arn
 }
+output "uploads_bucket_name" {
+  description = "UPLOADS_BUCKET for the app."
+  value       = aws_s3_bucket.uploads.id
+}
+
+output "ecr_repository_urls" {
+  value = { for k, r in data.aws_ecr_repository.this : k => r.repository_url }
+}
