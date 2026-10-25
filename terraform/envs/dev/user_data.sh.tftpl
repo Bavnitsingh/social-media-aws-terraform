@@ -1,0 +1,106 @@
+#!/bin/bash
+# Rendered by Terraform (templatefile). cloud-init runs it once, as root, at first boot.
+# NEVER add "set -x": it would print the secrets into /var/log.
+set -euo pipefail
+exec > >(tee -a /var/log/user-data.log) 2>&1
+
+export AWS_DEFAULT_REGION=${region}
+
+# The NAT gateway or a secret may not be ready for a moment. Try for up to 5 minutes.
+retry() {
+  local n=0
+  until "$@"; do
+    n=$((n + 1))
+    if [ "$n" -ge 30 ]; then
+      echo "giving up after $n attempts: $*"
+      return 1
+    fi
+    sleep 10
+  done
+}
+
+echo "--- install docker"
+retry dnf install -y docker jq
+systemctl enable --now docker
+
+echo "--- fetch secrets (kept in variables and a 0600 file in /run, which is memory)"
+DB_SECRET=$(retry aws secretsmanager get-secret-value --secret-id '${db_secret_arn}' --query SecretString --output text)
+APP_SECRET=$(retry aws secretsmanager get-secret-value --secret-id '${app_secret_arn}' --query SecretString --output text)
+
+umask 077
+ENV_FILE=/run/twitter-app.env
+{
+  echo "NODE_ENV=production"
+  echo "PORT=1234"
+  echo "SITE_URL=${site_url}"
+  echo "DB_HOST=${db_host}"
+  echo "DB_PORT=${db_port}"
+  echo "DB_NAME=${db_name}"
+  echo "DB_USER=$(printf '%s' "$DB_SECRET" | jq -er .username)"
+  echo "DB_PASSWORD=$(printf '%s' "$DB_SECRET" | jq -er .password)"
+  echo "DB_SSL_CA=/app/certs/rds-global-bundle.pem"
+  echo "DB_POOL_SIZE=10"
+  echo "UPLOADS_BUCKET=${uploads_bucket}"
+  echo "AWS_REGION=${region}"
+  echo "JWT_SECRET=$(printf '%s' "$APP_SECRET" | jq -er .JWT_SECRET)"
+  echo "OTP_SECRET=$(printf '%s' "$APP_SECRET" | jq -er .OTP_SECRET)"
+  echo "CAPTCHA_SECRET=$(printf '%s' "$APP_SECRET" | jq -er .CAPTCHA_SECRET)"
+} > "$ENV_FILE"
+umask 022
+
+echo "--- pull images from ECR"
+ecr_login() {
+  aws ecr get-login-password | docker login --username AWS --password-stdin ${ecr_registry}
+}
+retry ecr_login
+retry docker pull ${app_image}
+retry docker pull ${nginx_image}
+
+echo "--- start the app, wait until healthy, then nginx"
+docker network create twitter
+
+docker run -d --name app --network twitter --init --restart unless-stopped \
+  --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  --tmpfs /app/data:rw,noexec,nosuid,size=100m,uid=1000,gid=1000 \
+  --memory 384m \
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+  --env-file "$ENV_FILE" ${app_image}
+
+status=starting
+for i in $(seq 1 40); do
+  status=$(docker inspect --format '{{.State.Health.Status}}' app)
+  [ "$status" = "healthy" ] && break
+  sleep 5
+done
+if [ "$status" != "healthy" ]; then
+  echo "app container did not become healthy"
+  docker logs --tail 50 app
+  exit 1
+fi
+
+docker run -d --name nginx --network twitter --restart unless-stopped \
+  --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  --memory 128m \
+  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+  -p ${app_port}:8080 ${nginx_image}
+
+# The containers hold their own copy of the environment. Remove the file.
+rm -f "$ENV_FILE"
+
+echo "--- install the migration helper (run it once per deployment, through SSM)"
+cat > /usr/local/bin/run-migrate <<'MIGRATE'
+#!/bin/bash
+# Applies schema.sql to RDS with the image's migrate script. Safe to run repeatedly.
+set -euo pipefail
+export AWS_DEFAULT_REGION=${region}
+S=$(aws secretsmanager get-secret-value --secret-id '${db_secret_arn}' --query SecretString --output text)
+export DB_USER=$(printf '%s' "$S" | jq -er .username)
+export DB_PASSWORD=$(printf '%s' "$S" | jq -er .password)
+docker run --rm -e DB_HOST=${db_host} -e DB_PORT=${db_port} -e DB_USER -e DB_PASSWORD \
+  -e DB_SSL_CA=/app/certs/rds-global-bundle.pem ${app_image} node dist/migrate.js
+MIGRATE
+chmod 700 /usr/local/bin/run-migrate
+
+echo "--- user data finished"

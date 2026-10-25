@@ -62,3 +62,20 @@ output "uploads_bucket_name" {
 output "ecr_repository_urls" {
   value = { for k, r in data.aws_ecr_repository.this : k => r.repository_url }
 }
+
+output "alb_dns_name" {
+  value = aws_lb.app.dns_name
+}
+
+output "app_url" {
+  description = "Open this in a browser (HTTP only until Phase 7)."
+  value       = "http://${aws_lb.app.dns_name}"
+}
+
+output "target_group_arn" {
+  value = aws_lb_target_group.app.arn
+}
+
+output "asg_name" {
+  value = aws_autoscaling_group.app.name
+}

@@ -56,3 +56,31 @@ variable "db_instance_class" {
   type        = string
   default     = "db.t4g.micro"
 }
+
+variable "image_tag" {
+  description = "Image tag (git short SHA) to deploy. Must exist in BOTH ECR repositories. Changing it rolls the instances."
+  type        = string
+  default     = "1c71814"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type for the app servers."
+  type        = string
+  default     = "t3.micro"
+}
+
+variable "asg_min_size" {
+  type    = number
+  default = 2
+}
+
+variable "asg_max_size" {
+  type    = number
+  default = 4
+}
+
+variable "asg_desired_capacity" {
+  description = "Starting size. After creation the scaling policy owns the number (see ignore_changes)."
+  type        = number
+  default     = 2
+}
