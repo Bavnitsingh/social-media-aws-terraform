@@ -84,3 +84,9 @@ variable "asg_desired_capacity" {
   type        = number
   default     = 2
 }
+
+variable "domain_name" {
+  description = "FQDN the app is served on. Must watch the Route 53 zone created in envs/shared."
+  type = string
+  default = "bsc-twitter.devops-learn.online"
+}
