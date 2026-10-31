@@ -100,3 +100,19 @@ resource "aws_iam_role_policy" "app_uploads" {
 
 
 #   Phase 8: CloudWatch Logs write
+data "aws_iam_policy_document" "app_logs" {
+  statement {
+    sid     = "WriteContainerLogs"
+    actions = ["logs:CreateLogStream", "logs:PutLogEvents", "logs:DescribeLogStreams"]
+    resources = [
+      "${aws_cloudwatch_log_group.app.arn}:*",
+      "${aws_cloudwatch_log_group.nginx.arn}:*",
+    ]
+  }
+}
+
+resource "aws_iam_role_policy" "app_logs" {
+  name   = "write-container-logs"
+  role   = aws_iam_role.app.id
+  policy = data.aws_iam_policy_document.app_logs.json
+}

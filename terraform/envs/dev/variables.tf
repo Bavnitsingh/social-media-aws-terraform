@@ -87,6 +87,11 @@ variable "asg_desired_capacity" {
 
 variable "domain_name" {
   description = "FQDN the app is served on. Must watch the Route 53 zone created in envs/shared."
-  type = string
-  default = "bsc-twitter.devops-learn.online"
+  type        = string
+  default     = "bsc-twitter.devops-learn.online"
+}
+
+variable "alert_email" {
+  description = "Email address that receives CloudWatch alarm notifications."
+  type        = string
 }

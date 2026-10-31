@@ -69,18 +69,20 @@ resource "aws_launch_template" "app" {
 
   # Only non-secret values go in here: user data is readable by anyone who can describe the instance.
   user_data = base64encode(templatefile("${path.module}/user_data.sh.tftpl", {
-    region         = var.region
-    ecr_registry   = local.ecr_registry
-    app_image      = local.app_image
-    nginx_image    = local.nginx_image
-    app_port       = var.app_port
-    db_host        = aws_db_instance.this.address
-    db_port        = var.db_port
-    db_name        = var.db_name
-    db_secret_arn  = aws_db_instance.this.master_user_secret[0].secret_arn
-    app_secret_arn = aws_secretsmanager_secret.app.arn
-    uploads_bucket = aws_s3_bucket.uploads.id
-    site_url       = "http://${aws_lb.app.dns_name}"
+    region          = var.region
+    ecr_registry    = local.ecr_registry
+    app_image       = local.app_image
+    nginx_image     = local.nginx_image
+    app_port        = var.app_port
+    db_host         = aws_db_instance.this.address
+    db_port         = var.db_port
+    db_name         = var.db_name
+    db_secret_arn   = aws_db_instance.this.master_user_secret[0].secret_arn
+    app_secret_arn  = aws_secretsmanager_secret.app.arn
+    uploads_bucket  = aws_s3_bucket.uploads.id
+    site_url        = "http://${aws_lb.app.dns_name}"
+    app_log_group   = aws_cloudwatch_log_group.app.name
+    nginx_log_group = aws_cloudwatch_log_group.nginx.name
   }))
 
   tag_specifications {
@@ -125,7 +127,9 @@ resource "aws_autoscaling_group" "app" {
 
   # The NAT gateway and its routes must exist before instances boot,
   # because the boot script needs the internet (ECR, Secrets Manager).
-  depends_on = [module.vpc]
+
+  #In aws_autoscaling_group.app, change depends_on so the permission exists before new instances boot:
+  depends_on = [module.vpc, aws_iam_role_policy.app_logs]
 
   lifecycle {
     # The scaling policy changes the desired size. Do not fight it on every apply.

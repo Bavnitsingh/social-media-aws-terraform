@@ -57,6 +57,7 @@ retry docker pull ${app_image}
 retry docker pull ${nginx_image}
 
 echo "--- start the app, wait until healthy, then nginx"
+HOST=$(hostname)
 docker network create twitter
 
 docker run -d --name app --network twitter --init --restart unless-stopped \
@@ -64,7 +65,11 @@ docker run -d --name app --network twitter --init --restart unless-stopped \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --tmpfs /app/data:rw,noexec,nosuid,size=100m,uid=1000,gid=1000 \
   --memory 384m \
-  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+    --log-driver awslogs \
+  --log-opt awslogs-region=${region} \
+  --log-opt awslogs-group=${app_log_group} \
+  --log-opt awslogs-stream=app-$HOST \
+  --log-opt mode=non-blocking --log-opt max-buffer-size=4m \
   --env-file "$ENV_FILE" ${app_image}
 
 status=starting
@@ -83,7 +88,11 @@ docker run -d --name nginx --network twitter --restart unless-stopped \
   --read-only --cap-drop ALL --security-opt no-new-privileges:true \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --memory 128m \
-  --log-driver json-file --log-opt max-size=10m --log-opt max-file=3 \
+   --log-driver awslogs \
+  --log-opt awslogs-region=${region} \
+  --log-opt awslogs-group=${nginx_log_group} \
+  --log-opt awslogs-stream=nginx-$HOST \
+  --log-opt mode=non-blocking --log-opt max-buffer-size=4m \
   -p ${app_port}:8080 ${nginx_image}
 
 # The containers hold their own copy of the environment. Remove the file.
