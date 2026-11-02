@@ -165,7 +165,7 @@ for i in $(seq 1 9); do curl -sI http://localhost:8080/login | grep -i x-served-
 - **No secrets in the repo.** Only `.example` env files are committed.
 
 More detail:
-- [Challenges I hit while scaling horizontally](docs/architecture-challenges.md)
+- [Challenges I hit while scaling horizontally](docs/Architecture-Challenges.md)
 - [Every Dockerfile, compose and nginx directive explained](docs/DOCKER-NGINX-EXPLAINED.md)
 
 ## Roadmap
