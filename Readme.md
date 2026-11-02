@@ -1,6 +1,6 @@
 # Micro-Blogging Social Media App: Dockerised app, rebuilt for AWS with Terraform
 
-A Twitter-style social app (Node.js / TypeScript / Express) that I am packaging for horizontal scaling and rebuilding on AWS with Terraform.
+A Twitter-style Micro-blogging social media app (Node.js / TypeScript / Express) that I am packaging for horizontal scaling and rebuilding on AWS with Terraform.
 
 > **Status: work in progress.** The app and its local multi-replica setup work. The AWS infrastructure is being built phase by phase (see [Roadmap](#roadmap)). Anything marked *planned* does not exist yet.
 
