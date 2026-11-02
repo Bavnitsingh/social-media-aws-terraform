@@ -166,7 +166,7 @@ for i in $(seq 1 9); do curl -sI http://localhost:8080/login | grep -i x-served-
 
 More detail:
 - [Challenges I hit while scaling horizontally](docs/Architecture-Challenges.md)
-- [Every Dockerfile, compose and nginx directive explained](docs/DOCKER-NGINX-EXPLAINED.md)
+- [Every Dockerfile, compose and nginx directive explained](docs/DOCKER-NGINX.md)
 
 ## Roadmap
 
