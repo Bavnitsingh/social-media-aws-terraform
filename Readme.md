@@ -1,4 +1,4 @@
-# Twitter Clone: Dockerised app, rebuilt for AWS with Terraform
+# Micro-Blogging Social Media App: Dockerised app, rebuilt for AWS with Terraform
 
 A Twitter-style social app (Node.js / TypeScript / Express) that I am packaging for horizontal scaling and rebuilding on AWS with Terraform.
 
