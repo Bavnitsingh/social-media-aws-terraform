@@ -1,11 +1,11 @@
 variable "app_zone_name" {
-  type = string
+  type    = string
   default = "bsc-twitter.devops-learn.online"
 }
 
 resource "aws_route53_zone" "app" {
   name = var.app_zone_name
-  tags = {Name = var.app_zone_name}
+  tags = { Name = var.app_zone_name }
 
 }
 
