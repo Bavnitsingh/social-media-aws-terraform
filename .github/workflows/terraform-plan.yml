@@ -28,7 +28,7 @@ jobs:
   plan:
     name: Plan envs/dev
     # PRs from forks get no secrets and no OIDC token, so skip them instead of failing.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:

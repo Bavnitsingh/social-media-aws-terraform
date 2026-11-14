@@ -60,7 +60,7 @@ variable "db_instance_class" {
 variable "image_tag" {
   description = "Image tag (git short SHA) to deploy. Must exist in BOTH ECR repositories. Changing it rolls the instances."
   type        = string
-  default     = "1c71814"
+  default     = "d3e0a87"
 }
 
 variable "instance_type" {
