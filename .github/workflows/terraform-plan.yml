@@ -1,0 +1,100 @@
+name: Terraform plan (dev)
+
+# Shows reviewers WHAT a Terraform change would do, before it is merged.
+# The repo is PUBLIC, so the full plan is never printed or commented:
+# only "action + resource address" lines are published.
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  contents: read
+  id-token: write # lets the job ask GitHub for an OIDC token
+  pull-requests: write # lets the job post the summary comment
+
+concurrency:
+  group: tf-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: ap-south-1
+  TF_IN_AUTOMATION: "true"
+  TF_VAR_alert_email: ci-plan@example.com # dummy value: a plan does not need the real address
+
+jobs:
+  plan:
+    name: Plan envs/dev
+    # PRs from forks get no secrets and no OIDC token, so skip them instead of failing.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: terraform/envs/dev
+    env:
+      TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+          terraform_wrapper: false
+      
+          
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-ci # read-only role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Plan (full output stays on the runner)
+        run: |
+          set +e
+          # -lock=false: the read-only role must not write the state lock file.
+          # Safe because this plan is never applied.
+          terraform plan -input=false -lock=false -no-color -out=tfplan > plan.log 2>&1
+          code=$?
+          if [ $code -ne 0 ]; then
+            echo "::error::terraform plan failed. Last lines of the log:"
+            tail -n 40 plan.log
+            exit $code
+          fi
+
+      - name: Build a safe summary
+        run: |
+          terraform show -json tfplan > plan.json
+          jq -r '
+            [.resource_changes[]
+              | select(.change.actions != ["no-op"] and .change.actions != ["read"])] as $c
+            | "### Terraform plan (dev)\n\n"
+              + "**\($c | length) resource(s) would change.** "
+              + "dev is normally destroyed between sessions, so a long list of `create` is expected.\n\n"
+              + ($c | map("- `\(.change.actions | join("/"))` \(.address)") | join("\n"))
+          ' plan.json > summary.md
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment on the PR (create once, then update)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- tf-plan-summary -->';
+            const body = marker + '\n' + fs.readFileSync('terraform/envs/dev/summary.md', 'utf8');
+            const { data: comments } = await github.rest.issues.listComments({
+              ...context.repo, issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ ...context.repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ ...context.repo, issue_number: context.issue.number, body });
+            }

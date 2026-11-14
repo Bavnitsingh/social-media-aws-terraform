@@ -1,0 +1,92 @@
+name: Build and push images
+
+# After a merge to main: build both images and push them to ECR, tagged with the git short SHA.
+# This workflow does NOT deploy. Deploying is a separate, manual workflow (deploy-dev.yml).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - ".github/workflows/build-push.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-push
+  cancel-in-progress: false # never cancel a push halfway
+
+env:
+  AWS_REGION: ap-south-1
+
+jobs:
+  meta:
+    name: Compute image tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.t.outputs.tag }}
+    steps:
+      - id: t
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT" # same 7 chars as `git rev-parse --short HEAD`
+
+  push:
+    name: Push ${{ matrix.name }}
+    needs: meta
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: app
+            file: app/docker/Dockerfile
+          - name: nginx
+            file: app/nginx/Docker/Dockerfile
+    env:
+      TAG: ${{ needs.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-ecr-push # can only push to ECR
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Your ECR tags are IMMUTABLE. Re-running this workflow would fail on a tag that already
+      # exists, so check first and skip the build when it is already there.
+      - name: Does this tag already exist?
+        id: exists
+        run: |
+          if aws ecr describe-images \
+               --repository-name "twitter-clone/${{ matrix.name }}" \
+               --image-ids imageTag="$TAG" > /dev/null 2>&1; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "twitter-clone/${{ matrix.name }}:$TAG already exists, skipping build."
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+        if: steps.exists.outputs.found == 'false'
+
+      - name: Build and push
+        if: steps.exists.outputs.found == 'false'
+        uses: docker/build-push-action@v6
+        with:
+          context: app
+          file: ${{ matrix.file }}
+          push: true
+          provenance: false # no extra attestation manifest in ECR; keeps the repo tidy
+          tags: ${{ steps.ecr.outputs.registry }}/twitter-clone/${{ matrix.name }}:${{ env.TAG }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Write summary
+        run: echo "Image tag **$TAG** is in ECR for \`${{ matrix.name }}\`. Deploy it with the 'Deploy dev' workflow." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,117 @@
+name: Deploy dev
+
+# Manual button: roll a new image tag onto a RUNNING dev environment.
+# Bringing dev up from nothing is still done locally (it needs the app secret value and the migration).
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag (git short SHA) to deploy. Must exist in BOTH ECR repos."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false # never cancel a deploy midway
+
+env:
+  AWS_REGION: ap-south-1
+  ASG_NAME: twitter-bsc-app-asg # "${var.name}-app-asg" from compute.tf
+
+jobs:
+  deploy:
+    name: Apply to dev
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # The approval gate. The role gha-tf-apply only trusts tokens issued for THIS environment.
+    environment: dev
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: terraform/envs/dev
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_alert_email: ${{ secrets.ALERT_EMAIL }}
+      TF_STATE_BUCKET: ${{ secrets.TF_STATE_BUCKET }}
+      IMAGE_TAG: ${{ inputs.image_tag }}
+    steps:
+      - name: Validate the tag looks like a git SHA
+        run: |
+          if ! [[ "$IMAGE_TAG" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::image_tag must be a lowercase hex git SHA, got: $IMAGE_TAG"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-tf-apply
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Both images must exist in ECR
+        run: |
+          for repo in app nginx; do
+            aws ecr describe-images --repository-name "twitter-clone/$repo" \
+              --image-ids imageTag="$IMAGE_TAG" > /dev/null \
+              || { echo "::error::twitter-clone/$repo:$IMAGE_TAG not found in ECR"; exit 1; }
+          done
+
+      - name: dev must already be running
+        run: |
+          n=$(aws autoscaling describe-auto-scaling-groups \
+                --auto-scaling-group-names "$ASG_NAME" \
+                --query 'length(AutoScalingGroups)' --output text)
+          if [ "$n" != "1" ]; then
+            echo "::error::dev is not running. Bring it up locally first (apply, put-secret-value, run-migrate)."
+            exit 1
+          fi
+
+      - name: Init
+        run: |
+          terraform init -input=false \
+            -backend-config="bucket=${TF_STATE_BUCKET}" \
+            -backend-config="region=${AWS_REGION}"
+
+      - name: Apply
+        run: terraform apply -input=false -auto-approve -var="image_tag=${IMAGE_TAG}"
+
+      # apply only STARTS the rolling instance refresh; wait until it has really finished,
+      # otherwise the smoke test could be answered by the old instances.
+      - name: Wait for the instance refresh
+        run: |
+          sleep 20
+          for i in $(seq 1 90); do
+            s=$(aws autoscaling describe-instance-refreshes \
+                  --auto-scaling-group-name "$ASG_NAME" --max-records 1 \
+                  --query 'InstanceRefreshes[0].Status' --output text)
+            echo "instance refresh status: $s"
+            case "$s" in
+              Successful|None) exit 0 ;;
+              Pending|InProgress) sleep 30 ;;
+              *) echo "::error::instance refresh ended as $s"; exit 1 ;;
+            esac
+          done
+          echo "::error::instance refresh timed out"; exit 1
+
+      - name: Smoke test
+        run: |
+          URL=$(terraform output -raw app_url)
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 10 "$URL/health" > /dev/null; then
+              echo "OK: $URL/health answered 200"
+              exit 0
+            fi
+            echo "waiting for the app... ($i)"; sleep 10
+          done
+          echo "::error::smoke test failed"; exit 1

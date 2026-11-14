@@ -1,8 +1,9 @@
-# Unprivileged nginx: runs as a non-root user and listens on 8080,
-# so it works with cap_drop: ALL and a read-only root filesystem.
-# Config, error pages and static files are baked in, so there are no bind mounts
-# from a repo checkout (an ASG instance has no repo).
 FROM nginxinc/nginx-unprivileged:1.27-alpine
+
+# Pull patched Alpine packages (fixes the OpenSSL and brotli CVEs Trivy found in the base image).
+USER root
+RUN apk upgrade --no-cache
+USER 101
 
 COPY nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf
 COPY nginx/errors /var/www/errors
