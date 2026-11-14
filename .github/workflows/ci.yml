@@ -1,0 +1,113 @@
+name: CI
+
+# Runs on every pull request into main. Nothing here touches AWS, so it needs no credentials.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to the same PR cancels the older run (saves minutes).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------- app
+  app-build:
+    name: App build (TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # same major as the node:24-slim in your Dockerfile
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - run: npm ci # exact versions from package-lock.json
+      - run: npm run build # tsc: fails the PR if the TypeScript does not compile
+
+  # ------------------------------------------------------------- images
+  docker:
+    name: Image build + scan (${{ matrix.name }})
+    needs: app-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: app
+            file: app/docker/Dockerfile
+          - name: nginx
+            file: app/nginx/Docker/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: app # both Dockerfiles expect app/ as the build context
+          file: ${{ matrix.file }} # path is relative to the repo root, not the context
+          load: true # keep the image locally so Trivy can scan it
+          push: false
+          tags: twitter-${{ matrix.name }}:ci
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@0.28.0 # later: pin to a commit SHA
+        with:
+          image-ref: twitter-${{ matrix.name }}:ci
+          severity: CRITICAL # start strict-but-livable; add HIGH once the base images are clean
+          ignore-unfixed: true # do not fail on CVEs that have no fix yet
+          exit-code: "1"
+
+  # ---------------------------------------------------------- terraform
+  terraform-fmt:
+    name: Terraform fmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive -diff
+        working-directory: terraform
+
+  terraform-validate:
+    name: Terraform validate (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: bootstrap
+            dir: terraform/bootstrap
+          - name: shared
+            dir: terraform/envs/shared
+          - name: dev
+            dir: terraform/envs/dev
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+          terraform_wrapper: false
+      - name: Init without a backend (no AWS access needed)
+        run: terraform init -backend=false -input=false
+        working-directory: ${{ matrix.dir }}
+      - run: terraform validate
+        working-directory: ${{ matrix.dir }}
