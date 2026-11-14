@@ -43,7 +43,19 @@ jobs:
         with:
           terraform_version: 1.12.2
           terraform_wrapper: false
-
+      
+      - name: DEBUG show what GitHub sends (temporary, delete afterwards)
+        env:
+          ACCT: ${{ secrets.AWS_ACCOUNT_ID }}
+        run: |
+          TOKEN=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | jq -r .value)
+          echo "$TOKEN" | cut -d. -f2 | tr '_-' '/+' \
+            | awk '{ l=length($0)%4; if(l==2) $0=$0"=="; if(l==3) $0=$0"="; print }' \
+            | base64 -d | jq '{sub, aud, repository, repository_owner, event_name}'
+          if [[ "$ACCT" =~ ^[0-9]{12}$ ]]; then echo "account id: 12 digits, ends with ${ACCT: -3}";
+          else echo "account id BAD shape, length ${#ACCT}"; fi
+          
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-ci # read-only role
