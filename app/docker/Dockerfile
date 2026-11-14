@@ -1,19 +1,19 @@
 # syntax=docker/dockerfile:1
 
 # ---------- deps: ALL dependencies (TypeScript compiler needs devDependencies)
-FROM node:24-slim AS deps
+FROM node:25-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 # ---------- prod-deps: runtime dependencies only
-FROM node:24-slim AS prod-deps
+FROM node:25-slim AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 
 # ---------- build: compile TypeScript
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json ./
@@ -21,7 +21,7 @@ COPY src ./src
 RUN npm run build
 
 # ---------- runner: small, non-root, code is read-only to the app user
-FROM node:24-slim AS runner
+FROM node:25-slim AS runner
 ENV NODE_ENV=production
 WORKDIR /app
 
