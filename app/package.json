@@ -15,7 +15,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1156.0",
+    "@aws-sdk/client-s3": "^3.1166.0",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "bcrypt": "^6.0.0",
