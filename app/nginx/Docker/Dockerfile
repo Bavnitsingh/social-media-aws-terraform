@@ -1,4 +1,4 @@
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 
 # Pull patched Alpine packages (fixes the OpenSSL and brotli CVEs Trivy found in the base image).
 USER root
