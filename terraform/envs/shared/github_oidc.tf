@@ -2,18 +2,18 @@
 # Permanent and free, so it lives in envs/shared next to ECR and the DNS zone.
 # Apply this layer from your laptop only. CI must never be able to edit its own permissions.
 
-variable "github_repo" {
-  description = "GitHub repository allowed to assume the CI roles, as OWNER/REPO (current name, case-sensitive)."
+variable "github_sub_prefix" {
+  description = "Subject prefix GitHub puts in OIDC tokens for this repo. Owner and repo IDs make it rename-proof."
   type        = string
-  default     = "Bavnitsingh/social-media-aws-terraform"
+  default     = "repo:Bavnitsingh@150686501/social-media-aws-terraform@1425625673"
 }
 
 locals {
   # role name => the exact "sub" claim GitHub must present to assume it
   gha_roles = {
-    "gha-ci"       = "repo:${var.github_repo}:pull_request"
-    "gha-ecr-push" = "repo:${var.github_repo}:ref:refs/heads/main"
-    "gha-tf-apply" = "repo:${var.github_repo}:environment:dev"
+    "gha-ci"       = "${var.github_sub_prefix}:pull_request"
+    "gha-ecr-push" = "${var.github_sub_prefix}:ref:refs/heads/main"
+    "gha-tf-apply" = "${var.github_sub_prefix}:environment:dev"
   }
 }
 
