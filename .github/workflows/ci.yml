@@ -64,7 +64,7 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
-      -       # Not using the aquasecurity/trivy-action: its tags were compromised in March 2026.
+      # Not using the aquasecurity/trivy-action: its tags were compromised in March 2026.
       # Run the scanner image at a version the advisory lists as safe (v0.69.3 and earlier).
       - name: Trivy vulnerability scan
         run: |
